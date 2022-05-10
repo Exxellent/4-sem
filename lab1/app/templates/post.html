@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+
+{% block content %}
+
+<h1>{{post.title}}</h1>
+<div class="mb-3">
+    {{post.author}}
+    {{post.date.strftime('%d.%m.%Y')}}
+</div>
+<div class="mb-5">
+    <p style="text-align: center;">
+        <img src="{{ url_for('static', filename='images/' ~ (post.image_filename))}}" class="card-img-top" alt="..."
+            style="max-width: 70%;">
+    </p>
+</div>
+<div>
+    <p style="text-align: justify;">
+        {{post.text}}
+    </p>
+</div>
+<div class="border">
+    <div class="border-bottom py-2 align-middle bg-light fw-bold">
+        <p class="my-1 ms-3">
+            Оставьте комментарий
+        </p>
+    </div>
+    <div class="form-floating m-3">
+        <textarea class="form-control" placeholder="Leave a comment here" id="floatingTextarea2"
+            style="height: 100px"></textarea>
+        <label for="floatingTextarea2">Оставьте свой комментарий здесь</label>
+        <a class="btn btn-primary btn-sm mt-3 " href="#" role="button">Отправить </a>
+    </div>
+</div>
+
+<div class="row my-3">
+
+    {% for com in post.comments %}
+    <div class="d-flex">
+        <div class="flex-shrink-0">
+            <img src="{{ url_for('static', filename='images/avatar.jpg') }}" class="rounded-circle" alt="Sample Image"
+                height="64px">
+        </div>
+        <div class="flex-grow-1 ms-3">
+            <h5> {{ com.author }} </h5>
+            <p> {{ com.text}}</p>
+            {%for reply in com.replies%}
+            <div class="d-flex mt-4">
+                <div class="flex-shrink-0">
+                    <img src="{{ url_for('static', filename='images/avatar.jpg') }}" class="rounded-circle"
+                        alt="Sample Image" height="64px">
+                </div>
+                <div class="flex-grow-1 ms-3">
+                    <h5> {{ reply.author }} </h5>
+                    <p> {{ reply.text }}</p>
+                </div>
+            </div>
+            {%endfor%}
+        </div>
+    </div>
+
+    {% endfor %}
+    {% endblock %}
