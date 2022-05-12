@@ -96,7 +96,8 @@ def users():
 @app.route('/users/new')
 @login_required
 def new():
-    return render_template('users/new.html', user={}, roles=load_roles())
+    dict = {'login': None, 'password': None, 'first_name': None, 'middle_name': None, 'last_name': None}
+    return render_template('users/new.html', user = {}, error = dict, roles=load_roles())
 
 
 @app.route('/users/create', methods=['POST'])
@@ -104,6 +105,9 @@ def new():
 def create():
     params = request_params(CREATE_PARAMS)
     params['role_id'] = int(params['role_id']) if params['role_id'] else None
+    error = check(params)
+    if error['login'] is not None or error['password'] is not None or error['first_name'] is not None or error['last_name'] is not None:
+        return render_template('users/new.html', error=error, user=params, roles=load_roles())
     with mysql.connection.cursor(named_tuple=True) as cursor:
         try:
             cursor.execute(
@@ -114,7 +118,7 @@ def create():
             mysql.connection.commit()
         except connector.Error:
             flash('Введены некорректные данные. Ошибка сохранения', 'danger')
-            return render_template('users/new.html', user=params, roles=load_roles())
+            return render_template('users/new.html', user=params, error=error ,roles=load_roles())
     flash(f"Пользователь {params.get('login')} был успешно создан!", 'success')
     return redirect(url_for('users'))
 
@@ -155,7 +159,7 @@ def update(user_id):
     return redirect(url_for('show', user_id=user_id))
 
 
-@app.route('/users/<int:user_id>/delete', methods=['POST'])
+@app.route('/users/<int:user_id>/delete', methods=['GET','POST'])
 @login_required
 def delete(user_id):
     with mysql.connection.cursor(named_tuple=True) as cursor:
@@ -168,3 +172,44 @@ def delete(user_id):
             return redirect(url_for('users'))
     flash("Пользователь был успешно удален!", 'success')
     return redirect(url_for('users'))
+
+
+def check(params):
+    dict = {'login': None, 'password': None, 'first_name': None, 'middle_name': None, 'last_name': None}
+    dict['login'] = checklog(params['login'])
+    dict['password'] = checkpass(params['password'])
+
+    return dict
+    
+def checklog(login):
+    alphlog = "abcdefghijklmnopqrstuvwxyz1234567890"
+    if login is None:
+        return "Поле не должно быть пустым"
+    if len(login)<5:
+        return "Длинна логина должна быть не менее 5 символов"
+    for i in login:
+        if (i in alphlog)==0:
+            return "Логин должен состоять только из латинских букв и цифр"
+    return None
+    
+def checkpass(password):
+    alphpass = "abcdefghijklmnopqrstuvwxyz1234567890абвгдеёжзийклмнопрстуфхцчшщъыьэюя~!?@#$%^&*_-+()[]{>}</\|\"\'.,:;"
+    if len(password) < 8 or len(password) > 128:
+        return "Длинна пароля должна быть в пределах от 8 до 128"
+    up, low = False, False
+    for i in password:
+        if i == " ":
+            return "Пароль не может содержать пробелы"
+        if (i.lower() in alphpass)==0:
+            return "Пароль содержит недопустимые символы"
+    for i in password:
+        if i.isupper():
+            up = True
+        if i.islower():
+            low = True
+        if up and low:
+            break
+    if not up or not low:
+        return "Пароль должен содержать как минимум одну заглавную и одну строчную букву"
+    return None
+    
