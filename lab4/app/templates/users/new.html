@@ -4,7 +4,6 @@
 {% block content %}
     <h1>
         Создание нового пользователя
-        {{error}}
     </h1>
 
     {{ render_user_form(url_for('create'), roles, error, user) }}

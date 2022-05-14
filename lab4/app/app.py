@@ -1,5 +1,5 @@
 from flask import Flask, render_template, session, request, redirect, url_for, flash
-from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from mysql_db import MySQL
 import mysql.connector as connector
 
@@ -173,6 +173,66 @@ def delete(user_id):
     flash("Пользователь был успешно удален!", 'success')
     return redirect(url_for('users'))
 
+
+@app.route('/change', methods=['GET','POST'])
+def change():
+    error = None
+    if request.method == "POST":
+        login = request.form.get('login')
+        password = request.form.get('password')
+        confpassword = request.form.get('confirmpassword')
+        last_name = request.form.get('last_name')
+        update_list = ['password', 'login', 'last_name']
+        params = request_params(update_list)
+        with mysql.connection.cursor(named_tuple=True) as cursor:
+                cursor.execute(
+                    ('SELECT * FROM users WHERE login=%(login)s AND last_name=%(last_name)s;'), params)
+                db_user = cursor.fetchone()
+        if db_user:
+            if password != confpassword:
+                error = "Пароль должны быть одинаковыми"
+                return render_template('change.html', error = error)
+            if checkpass(password) is not None:
+                error = checkpass(password)
+                return render_template('change.html', error = error)
+            with mysql.connection.cursor(named_tuple=True) as cursor:
+                    cursor.execute(
+                        ('UPDATE users SET password_hash=SHA2(%(password)s, 256) WHERE login=%(login)s AND last_name=%(last_name)s;'), params)
+                    mysql.connection.commit()
+        else:
+            flash('Не удалось сменить пароль, проверьте логин и фамилию', 'danger')
+            return render_template('change.html', error = error)
+        return redirect(url_for('login'))
+    return render_template('change.html', error = error)
+
+@app.route('/change_auth', methods=['GET','POST'])
+@login_required
+def change_auth():
+    error = None
+    if request.method == "POST":
+        old_password = request.form.get('oldpassword')
+        password = request.form.get('password')
+        confpassword = request.form.get('confirmpassword')
+        with mysql.connection.cursor(named_tuple=True) as cursor:
+                cursor.execute(
+                    ('SELECT * FROM users WHERE id=%s AND password_hash=SHA2(%s, 256);'), (current_user.id, old_password ))
+                db_user = cursor.fetchone()
+        if db_user:
+            if password != confpassword:
+                error = "Пароль должны быть одинаковыми"
+                return render_template('change.html', error = error)
+            if checkpass(password) is not None:
+                error = checkpass(password)
+                return render_template('change.html', error = error)
+            with mysql.connection.cursor(named_tuple=True) as cursor:
+                    cursor.execute(
+                        ('UPDATE users SET password_hash=SHA2(%s, 256) WHERE id=%s;'), (password, current_user.id))
+                    mysql.connection.commit()
+        else:
+            flash("Неверный старый пароль", 'danger')
+            return render_template('change.html', error = error)
+        return redirect(url_for('index'))
+    return render_template('change.html', error = error)
 
 def check(params):
     dict = {'login': None, 'password': None, 'first_name': None, 'middle_name': None, 'last_name': None}
