@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% from 'macro.html' import render_сhange_form %}
+
+
+{% block content %}
+    <h1 class="text-center">
+        Изменение пароля
+    </h1>
+
+    {{ render_сhange_form(error) }}
+          
+{% endblock %}

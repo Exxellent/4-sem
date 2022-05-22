@@ -6,26 +6,42 @@ import mysql.connector as connector
 app = Flask(__name__)
 application = app
 
-mysql = MySQL(app)
-
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
-login_manager.login_message = 'Для доступа к этой странице необходимо пройти процедуру аутентификации'
-login_manager.login_message_category = 'warning'
-
 app.config.from_pyfile('config.py')
 
-CREATE_PARAMS = ['login', 'password', 'first_name',
-                 'last_name', 'middle_name', 'role_id']
+mysql = MySQL(app)
 
-UPDATE_PARAMS = [ 'first_name',
-                 'last_name', 'middle_name', 'role_id']
+CREATE_PARAMS = ['login', 'password', 'first_name', 'last_name', 'middle_name', 'role_id']
+
+UPDATE_PARAMS = [ 'first_name', 'last_name', 'middle_name', 'role_id']
+
+from auth import init_login_manager, bp as auth_bp, check_rights
+from visits import bp as visits_bp
+
+init_login_manager(app)
+app.register_blueprint(auth_bp)
+app.register_blueprint(visits_bp)
+
+@app.before_request
+def log_visit_info():
+    if request.endpoint == 'static' or request.args.get('download_csv'):
+        return None
+
+    user_id = getattr(current_user, 'id', None)
+    query = 'INSERT INTO visit_logs (user_id, path) VALUES (%s, %s);'
+    with mysql.connection.cursor(named_tuple=True) as cursor:
+        try:
+            cursor.execute(query,(user_id, request.path))
+            mysql.connection.commit()
+        except:
+            pass
+
 
 def request_params(params_list):
     params = {}
+
     for param_name in params_list:
         params[param_name] = request.form.get(param_name) or None
+
     return params
 
 
@@ -36,72 +52,33 @@ def load_roles():
     return roles
 
 
-class User(UserMixin):
-    def __init__(self, user_id, login):
-        super().__init__()
-        self.id = user_id
-        self.login = login
-
-
-@login_manager.user_loader
-def load_user(user_id):
-    with mysql.connection.cursor(named_tuple=True) as cursor:
-        cursor.execute('SELECT * FROM users WHERE id=%s;', (user_id,))
-        db_user = cursor.fetchone()
-    if db_user:
-        return User(user_id=db_user.id, login=db_user.login)
-    return None
-
-
 @app.route('/')
 def index():
     return render_template('index.html')
 
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == "POST":
-        login_ = request.form.get('login')
-        password = request.form.get('password')
-        remember_me = request.form.get('remember_me')
-        with mysql.connection.cursor(named_tuple=True) as cursor:
-            cursor.execute(
-                'SELECT * FROM users WHERE login=%s AND password_hash=SHA2(%s, 256);', (login_, password))
-            db_user = cursor.fetchone()
-        if db_user:
-            login_user(User(user_id=db_user.id, login=db_user.login),
-                       remember=remember_me)
-            flash('Вы успешно прошли процедуру аутентификации.', 'success')
-            next_ = request.args.get('next')
-            return redirect(next_ or url_for('index'))
-        flash('Введены неверные логин и/или пароль.', 'danger')
-    return render_template('login.html')
-
-
-@app.route('/logout')
-def logout():
-    logout_user()
-    return redirect(url_for('index'))
-
-
 @app.route('/users')
 def users():
+
     with mysql.connection.cursor(named_tuple=True) as cursor:
         cursor.execute(
-            'SELECT users.*, roles.name AS role_name FROM users LEFT JOIN roles ON users.role_id = roles.id;')
+            'SELECT users.*, roles.name AS role_name FROM users LEFT JOIN roles ON users.role_id = roles.id;'
+            )
         users = cursor.fetchall()
+        
     return render_template('users/index.html', users=users)
 
 
 @app.route('/users/new')
 @login_required
+@check_rights('create')
 def new():
     dict = {'login': None, 'password': None, 'first_name': None, 'middle_name': None, 'last_name': None}
     return render_template('users/new.html', user = {}, error = dict, roles=load_roles())
 
-
 @app.route('/users/create', methods=['POST'])
 @login_required
+@check_rights('create')
 def create():
     params = request_params(CREATE_PARAMS)
     params['role_id'] = int(params['role_id']) if params['role_id'] else None
@@ -124,15 +101,18 @@ def create():
 
 
 @app.route('/users/<int:user_id>')
+@login_required
+@check_rights('show')
 def show(user_id):
     with mysql.connection.cursor(named_tuple=True) as cursor:
         cursor.execute('SELECT * FROM users WHERE id=%s;', (user_id,))
         user = cursor.fetchone()
-    return render_template('users/show.html', user=user)
+    return render_template('users/show.html', user=user, )
 
 
 @app.route('/users/<int:user_id>/edit')
 @login_required
+@check_rights('update')
 def edit(user_id):
     with mysql.connection.cursor(named_tuple=True) as cursor:
         cursor.execute('SELECT * FROM users WHERE id=%s;', (user_id,))
@@ -142,6 +122,7 @@ def edit(user_id):
 
 @app.route('/users/<int:user_id>/update', methods=['POST'])
 @login_required
+@check_rights('update')
 def update(user_id):
     params = request_params(UPDATE_PARAMS)
     params['role_id'] = int(params['role_id']) if params['role_id'] else None
@@ -161,6 +142,7 @@ def update(user_id):
 
 @app.route('/users/<int:user_id>/delete', methods=['GET','POST'])
 @login_required
+@check_rights('delete')
 def delete(user_id):
     with mysql.connection.cursor(named_tuple=True) as cursor:
         try:
@@ -170,8 +152,10 @@ def delete(user_id):
         except connector.Error:
             flash('Не удалось удалить пользователя', 'danger')
             return redirect(url_for('users'))
-    flash("Пользователь был успешно удален!", 'success')
+    flash(f'''Пользователь {user_id} был успешно удален!''', 'success')
     return redirect(url_for('users'))
+
+
 
 
 @app.route('/change', methods=['GET','POST'])
@@ -180,6 +164,7 @@ def change():
     if request.method == "POST":
         password = request.form.get('password')
         confpassword = request.form.get('confirmpassword')
+        last_name = request.form.get('last_name')
         update_list = ['password', 'login', 'last_name']
         params = request_params(update_list)
         with mysql.connection.cursor(named_tuple=True) as cursor:
@@ -201,7 +186,7 @@ def change():
             flash('Не удалось сменить пароль, проверьте логин и фамилию', 'danger')
             return render_template('change.html', error = error)
         flash('Вы успешно сменили пароль', 'success')
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
     return render_template('change.html', error = error)
 
 @app.route('/change_auth', methods=['GET','POST'])
@@ -248,7 +233,7 @@ def checklog(login):
     if len(login)<5:
         return "Длинна логина должна быть не менее 5 символов"
     for i in login:
-        if (i in alphlog)==0:
+        if (i.lower() in alphlog)==0:
             return "Логин должен состоять только из латинских букв и цифр"
     return None
     
@@ -272,4 +257,3 @@ def checkpass(password):
     if not up or not low:
         return "Пароль должен содержать как минимум одну заглавную и одну строчную букву"
     return None
-    
