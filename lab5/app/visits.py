@@ -1,4 +1,6 @@
+from sre_constants import SUCCESS
 from flask import Flask, render_template, session, request, redirect, url_for, flash, Blueprint, send_file
+from flask_login import current_user, login_required
 from app import mysql
 import math
 import io
@@ -26,18 +28,31 @@ def generate_report(records):
 
 
 @bp.route('/logs')
+@login_required
 def logs():
     page = request.args.get('page', 1, type=int)
+    if current_user.is_admin:
+        query = ('SELECT visit_logs.*, users.last_name, users.first_name, users.middle_name' 
+                ' FROM visit_logs LEFT JOIN users ON visit_logs.user_id = users.id' 
+                ' ORDER BY visit_logs.created_at DESC' 
+                ' LIMIT %s'
+                ' OFFSET %s;')
+        with mysql.connection.cursor(named_tuple=True) as cursor:
+            cursor.execute(query, (PER_PAGE, PER_PAGE*(page-1)))
+            records = cursor.fetchall()
+    else:
+        query = ('SELECT visit_logs.*, users.last_name, users.first_name, users.middle_name' 
+                ' FROM visit_logs LEFT JOIN users ON visit_logs.user_id = users.id'
+                ' WHERE visit_logs.user_id=%s' 
+                ' ORDER BY visit_logs.created_at DESC' 
+                ' LIMIT %s'
+                ' OFFSET %s;')
+        with mysql.connection.cursor(named_tuple=True) as cursor:
+            cursor.execute(query, (current_user.id, PER_PAGE, PER_PAGE*(page-1)))
+            records = cursor.fetchall()
 
-    query = ('SELECT visit_logs.*, users.last_name, users.first_name, users.middle_name' 
-            ' FROM visit_logs LEFT JOIN users ON visit_logs.user_id = users.id' 
-            ' ORDER BY visit_logs.created_at DESC' 
-            ' LIMIT %s'
-            ' OFFSET %s;')
 
-    with mysql.connection.cursor(named_tuple=True) as cursor:
-        cursor.execute(query, (PER_PAGE, PER_PAGE*(page-1)))
-        records = cursor.fetchall()
+    
 
     with mysql.connection.cursor(named_tuple=True) as cursor:
         cursor.execute('SELECT COUNT(*) AS count from visit_logs')

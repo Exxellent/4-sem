@@ -16,8 +16,8 @@ UPDATE_PARAMS = [ 'first_name', 'last_name', 'middle_name', 'role_id']
 
 from auth import init_login_manager, bp as auth_bp, check_rights
 from visits import bp as visits_bp
-
 init_login_manager(app)
+
 app.register_blueprint(auth_bp)
 app.register_blueprint(visits_bp)
 
@@ -127,6 +127,7 @@ def update(user_id):
     params = request_params(UPDATE_PARAMS)
     params['role_id'] = int(params['role_id']) if params['role_id'] else None
     params['id'] = user_id
+    if not current_user.can('assign_role'): del params['role_id']
     with mysql.connection.cursor(named_tuple=True) as cursor:
         try:
             cursor.execute(
