@@ -25,15 +25,21 @@
         <div class="row mb-3">
             <label for="last_name" class="col-sm-2 col-form-label">Фамилия</label>
             <div class="col-sm-10">
-                <input type="text" class="form-control" name="last_name" id="last_name"
-                    value="{{ user.last_name or '' }}">
+                <input type="text" class="form-control {% if error['last_name'] is not none %} is-invalid {% endif %}"
+                    name="last_name" id="last_name" aria-describedby="lastNameValid" value="{{ user.last_name or '' }}">
+                <div id="lastNameValid" class="invalid-feedback">
+                    {{ error['last_name'] }}
+                </div>
             </div>
         </div>
         <div class="row mb-3">
             <label for="first_name" class="col-sm-2 col-form-label">Имя</label>
             <div class="col-sm-10">
-                <input type="text" class="form-control" name="first_name" id="first_name"
-                    value="{{ user.first_name or '' }}">
+                <input type="text" class="form-control  {% if error['first_name'] is not none %} is-invalid {% endif %}"
+                    name="first_name" id="first_name" aria-describedby="firstNameValid" value="{{ user.first_name or '' }}">
+                <div id="firstNameValid" class="invalid-feedback">
+                    {{ error['first_name'] }}
+                </div>
             </div>
         </div>
         <div class="row mb-3">
