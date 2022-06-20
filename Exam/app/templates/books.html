@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    {% for book in books%}
+    <div class="card-group col-sm-6 d-flex flex-column mt-2">
+        <div class="card mb-3" style="max-width: 540px;">
+            <div class="row g-0">
+                <div class="col-md-4">
+                    <img src="..." class="img-fluid rounded-start" alt="...">
+                </div>
+                <div class="col-md-8">
+                    <div class="card-body">
+                        <h5 class="card-title">{{book.name_book}}</h5>
+                        <p class="card-text">{{book.short_description}}</p>
+                        <p class="card-text"><small class="text-muted">Последнее обновление 3 мин. назад</small></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {%endfor%}
+</div>
+
+{% endblock %}

@@ -1,6 +1,9 @@
-SECRET_KEY = '5f23482fbd3692fbb4449bea49bc899f7164ca9dc4cb0fda96075d07dcdf81a1'
-MYSQL_USER = 'std_1682_exam'
-MYSQL_DATABASE = 'std_1682_exam'
-MYSQL_HOST = 'std-mysql.ist.mospolytech.ru'
-MYSQL_PASSWORD = 'Renat12345'
-ADMIN_ROLE_ID = 1
+import os
+
+SECRET_KEY = 'Renat12345'
+
+SQLALCHEMY_DATABASE_URI = f'mysql+mysqlconnector://std_1682_exam:Renat12345@std-mysql.ist.mospolytech.ru/std_1682_exam'
+SQLALCHEMY_TRACK_MODIFICATIONS = False
+SQLALCHEMY_ECHO = True
+
+UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'media', 'images')
