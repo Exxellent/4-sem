@@ -19,7 +19,7 @@ convention = {
 metadata = MetaData(naming_convention=convention)
 db = SQLAlchemy(app, metadata=metadata)
 
-from models import Book 
+from models import Book, Genry, Recives
 from auth import bp as auth_bp, init_login_manager
 
 init_login_manager(app)
@@ -33,5 +33,6 @@ def index():
 
 @app.route('/books')
 def books():
-    books = Book.query.all()
-    return render_template('books.html', books=books)
+    books = Book.query.order_by(Book.year.desc())
+    recives = Recives.query.all()
+    return render_template('books.html', books=books, recives = recives)
