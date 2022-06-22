@@ -21,18 +21,17 @@ db = SQLAlchemy(app, metadata=metadata)
 
 from models import Book, Genry, Recives
 from auth import bp as auth_bp, init_login_manager
+from books import book_bp
 
 init_login_manager(app)
 
 app.register_blueprint(auth_bp)
+app.register_blueprint(book_bp)
 
 @app.route('/')
 def index():
-    return render_template('index.html')
-
-
-@app.route('/books')
-def books():
     books = Book.query.order_by(Book.year.desc())
     recives = Recives.query.all()
-    return render_template('books.html', books=books, recives = recives)
+    return render_template('index.html', books=books, recives = recives)
+
+

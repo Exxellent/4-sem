@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h1 class="text-center">{{book.name_book}}</h1>
+    <section class="about">
+        <div class="row m-3">
+            <div class="col-3 d-flex flex-column">
+                <p class="flex-grow-1"><img src="" alt=""></p>
+                <span>★{{book.score}} ({{book.recives_count}})</span>
+                <span>Жанр(ы): {%for genry in book.genrys %}{{genry.name}} {%endfor%}</span>
+                <span>Издательство: {{book.publishing_house}}</span>
+            </div>
+            <div class="col">{{book.short_description}}</div>
+        </div>
+    </section>
+</div>
+
+{% for recive in book.recives %}
+<div class="d-flex">
+    <div class="flex-grow-1 ms-3">
+        <h5> {{ recive.user.full_name }} </h5>
+        <p> {{recive.text}}</p>
+    </div>
+</div>
+{% endfor %}
+
+{% endblock %}

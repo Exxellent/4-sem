@@ -57,20 +57,27 @@ class Book(db.Model):
     @property
     def score(self):
         sum = 0
-        for recive in self.recives:
+        recives = Recives.query.filter(self.id == Recives.id_book).all()
+        for recive in recives:
             sum += recive.mark
         try:
             return sum / len(self.recives)
         except ZeroDivisionError:
-            return 0
+            return 0.0
+    
+    @property
+    def recives_count(self):
+        recives = Recives.query.filter(self.id == Recives.id_book).all()
+        return len(recives)
 
     def __repr__(self):
         return '<Book %r>' % self.name_book
 
+
 class Genry(db.Model):
     __tablename__ = 'genrys'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    genry = db.Column(db.String(25), nullable=False)
+    name = db.Column(db.String(25), nullable=False)
 
 
 class Recives(db.Model):
@@ -86,4 +93,29 @@ class Recives(db.Model):
 
     book = db.relationship('Book')
     user = db.relationship('User')
+
+
+
+class Covers(db.Model):
+    __tablename__ = 'covers_books'
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    file_name = db.Column(db.String(100), nullable=False)
+    mime_type = db.Column(db.String(100), nullable=False)
+
+    md5_hash = db.Column(db.String(100), nullable=False, unique=True)
+
+    id_book = db.Column(db.Integer, db.ForeignKey('books.id'), nullable=False)
+    book = db.relationship('Book')
+
+    @property
+    def storage_filename(self):
+        _, ext = os.path.splitext(self.file_name)
+        return self.id + ext
+
+    @property
+    def url(self):
+        return url_for('image', image_id=self.id)
+
 
