@@ -1,4 +1,4 @@
-from flask import Flask, render_template, session, request, redirect, url_for, flash
+from flask import Flask, render_template, abort, send_from_directory
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from sqlalchemy import MetaData
 from flask_sqlalchemy import SQLAlchemy
@@ -19,7 +19,7 @@ convention = {
 metadata = MetaData(naming_convention=convention)
 db = SQLAlchemy(app, metadata=metadata)
 
-from models import Book, Genry, Recives
+from models import Book, Covers, Genry, Recives
 from auth import bp as auth_bp, init_login_manager
 from books import book_bp
 
@@ -33,5 +33,13 @@ def index():
     books = Book.query.order_by(Book.year.desc())
     recives = Recives.query.all()
     return render_template('index.html', books=books, recives = recives)
+
+@app.route('/images/<image_id>')
+def image(image_id):
+    img = Covers.query.get(image_id)
+    if img is None:
+        abort(404)
+    return send_from_directory(app.config['UPLOAD_FOLDER'],
+                               img.storage_filename)
 
 

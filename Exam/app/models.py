@@ -50,8 +50,9 @@ class Book(db.Model):
     volume = db.Column(db.Integer, nullable=False)
 
 
-    genrys = db.relationship('Genry', secondary=genrys_books, backref=db.backref('book'))
-    recives = db.relationship('Recives')
+    genrys = db.relationship('Genry', secondary=genrys_books, backref=db.backref('book'), cascade="all, delete")
+    recives = db.relationship('Recives', cascade="all, delete")
+    covers = db.relationship('Covers', uselist=False, cascade="all, delete")
 
 
     @property
@@ -91,15 +92,15 @@ class Recives(db.Model):
     id_book = db.Column(db.Integer,db.ForeignKey('books.id'))
     id_users = db.Column(db.Integer,db.ForeignKey('users.id'))
 
-    book = db.relationship('Book')
-    user = db.relationship('User')
+    book = db.relationship('Book', cascade="all, delete")
+    user = db.relationship('User', cascade="all, delete")
 
 
 
 class Covers(db.Model):
     __tablename__ = 'covers_books'
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.String(100), primary_key=True)
 
     file_name = db.Column(db.String(100), nullable=False)
     mime_type = db.Column(db.String(100), nullable=False)
@@ -107,7 +108,7 @@ class Covers(db.Model):
     md5_hash = db.Column(db.String(100), nullable=False, unique=True)
 
     id_book = db.Column(db.Integer, db.ForeignKey('books.id'), nullable=False)
-    book = db.relationship('Book')
+    book = db.relationship('Book', cascade="all, delete")
 
     @property
     def storage_filename(self):
