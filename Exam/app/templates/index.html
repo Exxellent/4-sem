@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-
+{% from 'pagination.html' import render_pagination %}
 {% block content %}
 <div class="row row-cols-1 row-cols-md-2 g-4 mt-2">
     {% for book in books%}
@@ -7,13 +7,13 @@
         <div class="card mx-auto mb-3 border-secondary " style="max-width: 540px;">
             <div class="row g-0 ">
                 <div class="col-md-4">
-                    <img src="{{book.covers.url}}" class="img-fluid rounded-start" alt="">
+                    <img src="{{book.covers.url}}" class="img-fluid rounded-start m-1" alt="" style="max-width: 170px;">
                     
                 </div>
                 <div class="col-md-8 ">
                     <div class="card-body ">
                         <h5 class="card-title">{{book.name_book}}</h5>
-                        <p class="card-text">{{book.short_description | truncate(120)}}</p>
+                        <p class="card-text">{{book.formatted_description|safe| truncate(140)}}</p>
                         <p class="card-text">Жанр(ы): {%for genry in book.genrys %}{{genry.name}} {%endfor%}</p>
                         <p class="card-text"><small class="text-muted">Дата написания: {{book.year.strftime('%Y')
                                 }}</small></p>
@@ -28,8 +28,8 @@
                     <a class="btn btn-secondary mx-2"
                         href="{{ url_for('books.edit', book_id=book.id) }}">Редактировать</a>
                     <button type="button" class="btn btn-danger" data-bs-toggle="modal"
-                        data-bs-target="#delete-user-modal{{book.id}}">Удалить</button>
-                    <div class="modal fade" id="delete-user-modal{{book.id}}" tabindex="-1"
+                        data-bs-target="#delete-book-modal{{book.id}}">Удалить</button>
+                    <div class="modal fade" id="delete-book-modal{{book.id}}" tabindex="-1"
                         aria-labelledby="exampleModalLabel" aria-hidden="true">
                         <div class="modal-dialog modal-dialog-center">
                             <div class="modal-content">
@@ -59,7 +59,10 @@
     </div>
     {%endfor%}
 </div>
-<div class="add mt-5 text-center">
+<div class="mb-5">
+    {{ render_pagination(pagination, request.endpoint) }}
+</div>
+<div class="add mb-2 mt-5 text-center">
     <a class="btn btn-primary " href="{{ url_for('books.create') }}">Добавить книгу</a>
 </div>
 
