@@ -16,21 +16,68 @@ function imagePreviewHandler(event) {
     }
 }
 
-function openLink(event) {
-    let row = event.target.closest('.row');
-    if (row.dataset.url) {
-        window.location = row.dataset.url;
-    }
+function imageUploadFunction(file, onSuccess, onError) {
+    let xhr = new XMLHttpRequest();
+    let formData = new FormData();
+    let formElm = this.element.closest('form');
+    xhr.responseType = 'json';
+    xhr.open('POST', '/api/images/upload');
+    xhr.onload = function() {
+        if (this.status == 200) {
+            onSuccess(this.response.data.filePath);
+
+            let hiddenField = document.createElement('input');
+            hiddenField.type = 'hidden';
+            hiddenField.name = 'image_id';
+            hiddenField.value = this.response.data.imageId;
+            formElm.append(hiddenField);
+
+        } else {
+            onError(this.response.error);
+        }
+    };
+    formData.append("image", file);
+    xhr.send(formData);
 }
 
-
+const TOOLBAR_ITEMS = [
+    "bold", "italic", "heading", "|", 
+    "quote", "ordered-list", "unordered-list", "|",
+    "link", "upload-image", "|",  
+    "preview", "side-by-side", "fullscreen", "|",
+    "guide"
+]
 
 window.onload = function() {
-    let background_img_field = document.getElementById('background_img');
+    let background_img_field = document.getElementById('preview_img');
     if (background_img_field) {
         background_img_field.onchange = imagePreviewHandler;
     }
-    for (let course_elm of document.querySelectorAll('.courses-list .row')) {
-        course_elm.onclick = openLink;
+
+    if (document.getElementById('book_short_description')) {
+        let easyMDE = new EasyMDE({
+            element: document.getElementById('book_short_description'),
+            toolbar: TOOLBAR_ITEMS,
+            uploadImage: true,
+            imageUploadEndpoint: '/api/images/upload',
+            imageUploadFunction: imageUploadFunction
+        });
     }
+
+    if (document.getElementById('text')) {
+        let easyMDE = new EasyMDE({
+            element: document.getElementById('text'),
+            toolbar: TOOLBAR_ITEMS,
+            uploadImage: false
+        });
+    }
+
+    var myModalEl = document.getElementById('delete-book-modal')
+    myModalEl.addEventListener('show.bs.modal', function (event) {
+        let form = this.querySelector('form');
+        form.action = event.relatedTarget.dataset.url;
+
+        let bookNameElement = document.getElementById('book_name');
+        bookNameElement.innerHTML = event.relatedTarget.closest('.card').querySelector('.card-title').textContent;
+    })
 }
