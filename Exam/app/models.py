@@ -1,5 +1,3 @@
-
-from email.policy import default
 import os
 import sqlalchemy as sa
 
@@ -12,10 +10,18 @@ from app import db, app
 from users_policy import UsersPolicy
 
 
-genrys_books = db.Table('genrys_books',
-                        db.Column('id', db.Integer, primary_key=True),
-                        db.Column('id_book',db.Integer,db.ForeignKey('books.id'),primary_key=True),
-                        db.Column('id_genry',db.Integer,db.ForeignKey('genrys.id'),primary_key=True))
+class Genrys_books(db.Model):
+    __tablename__ = 'genrys_books'
+    id = db.Column(db.Integer, primary_key=True),
+    id_book = db.Column(db.Integer,db.ForeignKey('books.id'),primary_key=True)
+    id_genry = db.Column(db.Integer,db.ForeignKey('genrys.id'),primary_key=True)
+    book = db.relationship('Book')
+    genry = db.relationship('Genry')
+
+# genrys_books = db.Table('genrys_books',
+#                         db.Column('id', db.Integer, primary_key=True),
+#                         db.Column('id_book',db.Integer,db.ForeignKey('books.id'),primary_key=True),
+#                         db.Column('id_genry',db.Integer,db.ForeignKey('genrys.id'),primary_key=True))
 
 class User(db.Model, UserMixin):
     __tablename__ = 'users'
@@ -30,6 +36,7 @@ class User(db.Model, UserMixin):
 
     def set_password(self, password: str):
         self.password_hash = generate_password_hash(password)
+
 
     def check_password(self, password: str):
         return check_password_hash(self.password_hash, password)
@@ -79,7 +86,8 @@ class Book(db.Model):
     volume = db.Column(db.Integer, nullable=False)
 
 
-    genrys = db.relationship('Genry', secondary=genrys_books, backref=db.backref('book'), cascade="all, delete")
+    # genrys = db.relationship('Genry', secondary=genrys_books, backref=db.backref('books'), cascade="all, delete")
+    books_genres = db.relationship('Genrys_books')
     recives = db.relationship('Recives', cascade="all, delete")
     covers = db.relationship('Covers', uselist=False, cascade="all, delete")
 

@@ -3,11 +3,27 @@ import uuid
 import os
 
 from werkzeug.utils import secure_filename
+from sqlalchemy.sql import or_
 
-from models import Covers
+from models import Covers, Book, Genrys_books
 from app import db, app
 
 
+class BookFilter:
+    def __init__(self):
+        self.query = Book.query
+        self.qwerty = Genrys_books.query
+
+    def perform(self, name_book='', genrys=''):
+        if name_book != '':
+            self.query = self.query.filter(Book.name_book.ilike(f'%{name_book}%'))
+        if genrys != []:
+            self.qwerty =  self.qwerty.filter(Genrys_books.id_genry.in_(genrys))
+            self.query = self.query.join(self.qwerty)
+        return self.query.order_by(Book.year.desc())
+
+
+            
 class ImageSaver:
     def __init__(self, file):
         self.file = file
