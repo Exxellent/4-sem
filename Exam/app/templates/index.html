@@ -2,22 +2,51 @@
 {% from 'pagination.html' import render_pagination %}
 {% block content %}
 
-<div class="my-5 p-3 bg-dark rounded">
-    <form method="GET" class="row align-items-center">
-        <div class="col-sm-12 mb-3 col-md-6 mb-md-0">
-            <input autocomplete="off" type="text" class="form-control" id="name_book" name="name_book" placeholder="Название книги">
+<div class="my-5 p-3 rounded bg-dark rounded text-white">
+    <form method="GET">
+        <div class="row">
+            <div class="mb-3 col-4">
+                <label for="name_book">Название книги</label>
+                <input class="form-control" type="text" name="name_book" id="name_book" value="{{ search_params['name_book'] or '' }}">
+            </div>
+            <div class="mb-3 col-4">
+                <label for="author">Автор</label>
+                <input class="form-control" type="text" name="author" id="author" value="{{ search_params['author'] or '' }}">
+            </div>
+            <div class="col-auto mb-3">
+                <label for="years">Год написания</label>
+                <select class="form-select"  id="years" name="years" multiple size="3" title="Год выпуска">
+                    {% for year in years%}
+                        <option  {% if year in search_params['years'] %}selected{% endif %} value="{{ year }}">{{ year }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3 col-auto">
+                <label for="genrys">Жанр</label>
+                <select class="form-select" id="genrys" name="genrys" multiple size="3" title="Жанр книги">
+                    {% for genry in genrys %}
+                        <option  {% if genry.id in search_params['genrys'] %}selected{% endif %} value="{{ genry.id }}">{{ genry.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            
         </div>
-        
-        <div class="col-sm-12 mb-3 col-md-4 mb-md-0">
-            <select class="form-select" id="genrys" name="genrys" multiple size="3" title="Категория курса">
-                {% for genry in genrys %}
-                    <option  {% if genry.id in genrys %}selected{% endif %} value="{{ genry.id }}">{{ genry.name }}</option>
-                {% endfor %}
-            </select>
+        <div class="row">
+            <div class="mb-3 col-auto ">
+                <label for="amount_from">Количество страниц от</label>
+                <input class="form-control" name="amount_from" type="number" id="amount_from" value="{{  search_params['amount_from'] or '' }}">
+            </div>
+
+            <div class="mb-3 col-auto">
+                <label for="amount_to">Количество страниц до</label>
+                <input class="form-control" name="amount_to" type="number" id="amount_to" value="{{  search_params['amount_to'] or '' }}">
+            </div>
         </div>
-        
-        <div class="col-sm-12 col-md-2 align-self-end">
-            <button type="submit" class="btn btn-outline-light w-100 mt-auto">Найти</button>
+        <div class="row justify-content-end ">
+            <div class="d-grid gap-2 col-3 mx-auto">
+                <button type="submit" class="btn btn-primary ">Найти</button>
+            </div>
         </div>
     </form>
 </div>

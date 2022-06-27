@@ -14,12 +14,20 @@ class BookFilter:
         self.query = Book.query
         self.qwerty = Genrys_books.query
 
-    def perform(self, name_book='', genrys=''):
+    def perform(self, name_book='', genrys='', years='', amount_from='', amount_to='', author=''):
         if name_book != '':
             self.query = self.query.filter(Book.name_book.ilike(f'%{name_book}%'))
         if genrys != []:
             self.qwerty =  self.qwerty.filter(Genrys_books.id_genry.in_(genrys))
             self.query = self.query.join(self.qwerty)
+        if years != []:
+            self.query = self.query.filter(or_(Book.year.like(f'%{v}%') for v in years))
+        if amount_from != '':
+            self.query = self.query.filter(Book.volume >= int(amount_from))
+        if amount_to != '':
+            self.query = self.query.filter(Book.volume <= int(amount_to))
+        if author != '':
+            self.query = self.query.filter(Book.author.ilike(f'%{author}%'))
         return self.query.order_by(Book.year.desc())
 
 
