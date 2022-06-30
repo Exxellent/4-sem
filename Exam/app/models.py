@@ -87,7 +87,7 @@ class Book(db.Model):
 
 
     # genrys = db.relationship('Genry', secondary=genrys_books, backref=db.backref('books'), cascade="all, delete")
-    books_genres = db.relationship('Genrys_books')
+    genrys_books = db.relationship('Genrys_books', cascade="all, delete")
     recives = db.relationship('Recives', cascade="all, delete")
     covers = db.relationship('Covers', uselist=False, cascade="all, delete")
 

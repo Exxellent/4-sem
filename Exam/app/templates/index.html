@@ -63,7 +63,7 @@
                 <div class="col-md-8 ">
                     <div class="card-body ">
                         <h5 class="card-title">{{book.name_book}}</h5>
-                        <p class="card-text">{{book.formatted_description|safe| truncate(140)}}</p>
+                        <p class="card-text">{{book.formatted_description|safe| truncate(147)}}</p>
                         <p class="card-text">Жанр(ы): {% for genry in book_genry %}{% if genry.id_book == book.id %}{{ genry.genry.name }}{% endif %}{% endfor %}</p>
                         <p class="card-text"><small class="text-muted">Дата написания: {{book.year.strftime('%Y')
                                 }}</small></p>
@@ -112,9 +112,11 @@
 <div class="mb-5">
     {{ render_pagination(pagination, request.endpoint, search_params) }}
 </div>
+{% if current_user.is_admin%}
 <div class="add mb-2 mt-5 text-center">
     <a class="btn btn-primary " href="{{ url_for('books.create') }}">Добавить книгу</a>
 </div>
+{%endif%}    
 
 
 

@@ -24,7 +24,7 @@
         <div class=" ms-5 d-flex">
             <div class="flex-grow-1">
                 <h5> {{ recive.user.full_name }} <small class="text-muted">{{recive.date_added}}</small> </h5>
-                <p> {{recive.text}}</p>
+                <p> {{recive.formatted_text | safe}}</p>
             </div>
             <div>
                 <span>{% for i in range (recive.mark)%}★{%endfor%}</span> 

@@ -6,7 +6,7 @@ from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from app import db, app
-from models import Book, Recives, Genry, Covers
+from models import Book, Genrys_books, Recives, Genry, Covers
 from tools import ImageSaver
 from auth import check_rights
 
@@ -66,10 +66,11 @@ def edit(book_id):
             book.publishing_house = clean(request.form.get('book_publishing_house'))
             book.year = request.form.get('book_year')
             book.volume = request.form.get('book_volume')
-            for genry_id in request.form.getlist('book_genrys'):
-                genry = Genry.query.get(genry_id)
-                book.genrys.append(genry)
-
+            genrys = request.form.getlist('book_genrys')
+            for i in genrys:
+                genre_in_db = Genrys_books(id_book=book.id, id_genry=i)
+                db.session.add(genre_in_db)
+                db.session.commit()
             db.session.add(book)
 
             db.session.commit()
@@ -99,50 +100,52 @@ def create():
             book.year = request.form.get('book_year')
             book.volume = request.form.get('book_volume')
 
-            for id in request.form.getlist('book_genrys'):
-                genry = Genry.query.get(id)
-                book.genrys.append(genry)
-
             db.session.add(book)
             db.session.commit()
 
             f = request.files.get('book_img')
             if f and f.filename:
                 ImageSaver(f).save(book.id)
-
             db.session.commit()
+            genrys = request.form.getlist('book_genrys')
+            for i in genrys:
+                genre_in_db = Genrys_books(id_book=book.id, id_genry=i)
+                db.session.add(genre_in_db)
+                db.session.commit()
+
 
             flash('Книга успешно добавлена.', 'success')
             return redirect(url_for('books.show', book_id=book.id))
         except:
             db.session.rollback()
-            flash('При сохранении данных возникла ошибка. Проверьте корректность введённых данных.', 'warning')
+            flash(genrys, 'warning')
     return render_template('book/create.html',genrys=genrys, genrys_count=genrys_count)
 
 @book_bp.route('/<int:book_id>/delete', methods=['GET', 'POST'])
 @login_required
 @check_rights('delete_book')
 def delete(book_id):
-    try:
-        book = Book.query.get(book_id)
-        image = Covers.query.filter(Covers.id_book == book_id).first()
+    if request.method == 'POST':
+        try:
+            book = Book.query.filter(Book.id==book_id).first()
+            genr = Genrys_books.query.filter(Genrys_books.id_book == book_id).all()
+            img = Covers.query.filter(Covers.id_book==book_id).first()
+            if img:
+                path_to_img = os.path.join(
+                    app.config['UPLOAD_FOLDER'], img.storage_filename)
 
-        if image:
-            path_to_img = os.path.join(
-                app.config['UPLOAD_FOLDER'], image.storage_filename)
+            db.session.delete(book)
+            for g in genr:
+                db.session.delete(g)
+            db.session.commit()
+            if img:
+                os.remove(path_to_img)
+        except:
+            flash(Covers.query.filter(Covers.id_book==book_id).first(), 'warning')
+            return redirect(url_for('index'))
 
-        book.genrys.clear()
-        db.session.delete(book)
-        db.session.commit()
-        if image:
-            os.remove(path_to_img)
-
-    except:
-        flash('Ошибка при удалении книги.', 'warning')
+        flash('Книга успешно удалена.', 'success')
         return redirect(url_for('index'))
-
-    flash('Книга успешно удалена.', 'success')
-    return redirect(url_for('index'))
 
 
 
